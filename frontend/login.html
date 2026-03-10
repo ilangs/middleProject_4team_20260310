@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Math Tutor 로그인</title>
+
+  <link rel="stylesheet" href="css/app.css">
+</head>
+<body class="login-page">
+  <div class="login-container">
+    <div class="login-card">
+      <h1>AI Math Tutor 로그인</h1>
+
+      <div class="login-form">
+        <input type="text" id="username" placeholder="아이디 입력">
+        <input type="password" id="password" placeholder="비밀번호 입력">
+
+        <div class="btn-group">
+          <button type="button" onclick="login()">로그인</button>
+          <button type="button" onclick="openSignupModal()">회원가입</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="signup-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>회원가입</h2>
+
+      <input type="text" id="signup-name" placeholder="이름 입력">
+      <input type="text" id="signup-nickname" placeholder="닉네임 입력">
+      <input type="text" id="signup-id" placeholder="아이디 입력">
+      <input type="password" id="signup-password" placeholder="비밀번호 입력">
+      
+      <div class="character-section">
+        <p class="character-title">캐릭터 선택</p>
+
+        <div class="character-list">
+          <button type="button" class="character-btn" data-character="bunny">
+            <img src="assets/images/bunny.png">
+            <span>버니</span>
+          </button>
+
+          <button type="button" class="character-btn" data-character="piyo">
+            <img src="assets/images/piyo.png">
+            <span>삐요</span>
+          </button>
+
+          <button type="button" class="character-btn" data-character="popo">
+            <img src="assets/images/popo.png">
+            <span>포포</span>
+          </button>
+
+          <button type="button" class="character-btn" data-character="roki">
+            <img src="assets/images/roki.png">
+            <span>로키</span>
+          </button>
+
+          <button type="button" class="character-btn" data-character="rumi">
+            <img src="assets/images/rumi.png">
+            <span>로미</span>
+          </button>
+
+          <button type="button" class="character-btn" data-character="tori">
+            <img src="assets/images/tori.png">
+            <span>토리</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-btn-group">
+        <button type="button" onclick="signup()">가입완료</button>
+        <button type="button" onclick="closeSignupModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+
+  <script>
+   function openSignupModal() {
+     document.getElementById("signup-modal").classList.remove("hidden");
+   }
+
+   function closeSignupModal() {
+     document.getElementById("signup-modal").classList.add("hidden");
+   }
+
+   async function signup() {
+     const name = document.getElementById("signup-name").value.trim();
+     const nickname = document.getElementById("signup-nickname").value.trim();
+     const username = document.getElementById("signup-id").value.trim();
+     const password = document.getElementById("signup-password").value.trim();
+     const selectedCharacter = document.querySelector(".character-btn.selected");
+
+     if (!name || !nickname || !username || !password) {
+       alert("모든 항목을 입력해줘.");
+       return;
+     }
+
+     if (!selectedCharacter) {
+       alert("캐릭터를 선택해줘.");
+       return;
+     }
+
+     const character = selectedCharacter.dataset.character;
+
+     try {
+       const response = await fetch("http://localhost:8000/auth/register", {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json"
+         },
+         body: JSON.stringify({
+           name: name,
+           nickname: nickname,
+           username: username,
+           password: password,
+           character: character
+         })
+       });
+
+       const data = await response.json();
+
+       if (response.ok) {
+         alert("회원가입 완료!");
+         closeSignupModal();
+       } else {
+         alert(data.detail || "회원가입 실패");
+       }
+     } catch (error) {
+       console.log(error);
+       alert("회원가입 중 오류가 발생했어.");
+     }
+   }
+  </script>
+</body>
+</html>

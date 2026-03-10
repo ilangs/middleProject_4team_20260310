@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Math Tutor</title>
+
+  <link rel="stylesheet" href="css/app.css">
+  <script>
+    window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']]}};
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <header class="top-header">
+      <div class="top-left">
+        <img id="user-character">
+        <h2 id="sidebar-title" onclick="goPage('home')"></h2>
+      </div>
+
+      <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </header>
+
+    <div class="layout">
+
+      <aside class="sidebar">
+        <div class="menu">
+        <button onclick="goPage('today')">🎯 오늘의 학습</button>
+        <div class="back-link" onclick="goHome()">⬆️ 다른 단원 선택하기</div>
+        <button onclick="goPage('free')">🤖 AI 자유 학습</button>
+        <button onclick="goPage('exam')">📝 시험</button>
+        <button onclick="goPage('score')">📊 성적 로그</button>
+        <button onclick="goPage('token')">🪙 토큰 로그</button>
+       </div>
+     </aside>
+
+     <main class="content">
+
+      <!-- 홈 -->
+    <section id="page-home" class="page" style="display:none;">
+      <div class="hero-card">
+        <div class="hero-text">
+          <h1>👋 환영해</h1>
+          <h2>오늘도 재밌게 공부해보자!</h2>
+          <p>왼쪽 메뉴에서 원하는 학습을 선택해줘.</p>
+        </div>
+
+        <video id="homeVideo" class="hero-video" autoplay controls playsinline preload="auto">
+          <source src="assets/animations/애니샘플2.mp4" type="video/mp4">
+        </video>
+      </div>
+    </section>
+
+      <!-- 오늘 학습 -->
+      <section id="page-today" class="page" style="display:none;">
+        <h1>🎯 Today's Learning</h1>
+
+        <section id="step-select_unit" class="card">
+          <h2>📖 오늘의 학습 단원</h2>
+          <label>어떤 단원을 배워볼까요?</label>
+          <select id="unit-select">
+            <option value="">단원 선택</option>
+          </select>
+          <button id="btn-start">공부 시작하기</button>
+        </section>
+
+        <section id="step-explain" class="card" style="display:none;">
+          <h2>📖 <span id="unit-title-explain"></span> 개념 익히기</h2>
+          <div class="box" id="explain-text">개념 설명 텍스트(나중에 API로 채움)</div>
+          <div class="row">
+            <button id="btn-tts">🎙️ 루미 선생님 목소리로 듣기</button>
+            <button id="btn-go-student">내용 이해 완료! 내가 설명해보기 🗣️</button>
+          </div>
+        </section>
+
+        <section id="step-student_explain" class="card" style="display:none;">
+          <h2>🗣️ <span id="unit-title-student"></span> 직접 설명하기</h2>
+          <textarea id="student-text" rows="6" placeholder="어떻게 이해했는지 적어줘"></textarea>
+          <button id="btn-student-done">설명 완료! ✨</button>
+        </section>
+
+        <section id="step-explain_feedback" class="card" style="display:none;">
+          <h2>👨‍🏫 이해도 검토 결과</h2>
+          <div class="box" id="concept-feedback">PASS/FAIL 결과(나중에 API로 채움)</div>
+          <div class="row">
+            <button id="btn-go-quiz">이제 문제 풀기 📝</button>
+            <button id="btn-go-reexplain">보충 설명 듣고 문제 풀기 ➡️</button>
+          </div>
+        </section>
+
+        <section id="step-re_explain" class="card" style="display:none;">
+          <h2>📖 보충 학습</h2>
+          <div class="box" id="reexplain-text">보충 설명(기존 설명 재노출)</div>
+          <button id="btn-reexplain-done">이제 정말 준비 완료! 문제 풀기 📝</button>
+        </section>
+
+        <section id="step-ask_question" class="card" style="display:none;">
+          <h2>📝 퀴즈 (<span id="quiz-id">-</span>)</h2>
+          <div class="box" id="quiz-problem">문제 영역(이미지/수식 포함)</div>
+          <textarea id="answer-text" rows="6" placeholder="정답과 풀이를 적어주세요."></textarea>
+          <button id="btn-submit" type="button">제출하기</button>
+        </section>
+
+        <section id="step-evaluation" class="card" style="display:none;">
+          <h2>👨‍🏫 AI 선생님의 피드백</h2>
+          <div class="box" id="ai-feedback">피드백 텍스트</div>
+          <div class="row">
+            <button id="btn-next-problem">다른 문제 풀기</button>
+            <button id="btn-next-unit">다음 단원으로 가기 ➡️</button>
+          </div>
+        </section>
+      </section>
+
+      <!-- AI 자유학습 (채팅 UI) -->
+      <section id="page-free" class="page" style="display:none;">
+        <h1>🤖 AI 자유학습</h1>
+        <div class="card free-chat-card">
+          <!-- 채팅 메시지 영역 (스크롤) -->
+          <div id="free-chat-messages" class="free-chat-messages">
+            <!-- section2.js에서 동적으로 말풍선이 추가됨 -->
+          </div>
+          <!-- 질문 입력 영역 -->
+          <div class="free-chat-input-area">
+            <input
+              type="text"
+              id="free-chat-input"
+              class="free-chat-input"
+              placeholder="질문을 입력하세요"
+              autocomplete="off"
+            />
+            <button id="free-chat-send-btn" class="free-chat-send-btn" type="button">전송</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 시험 -->
+      <section id="page-exam" class="page" style="display:none;">
+        <h1>📝 시험</h1>
+
+        <!-- 단원 선택 + 버튼 -->
+        <div class="card">
+          <h2>시험 단원 선택</h2>
+          <select id="exam-unit-select">
+            <option value="">단원 선택</option>
+          </select>
+          <div class="row" style="margin-top:14px;">
+            <button id="exam-make-btn">시험지 만들기</button>
+            <button id="exam-start-btn" disabled>시험 시작</button>
+          </div>
+
+          <!-- 타이머 -->
+          <div id="exam-timer-box" class="box" style="margin-top:20px; display:none;">
+            ⏰ 남은 시간 : <span id="exam-timer-display">40:00</span>
+          </div>
+        </div>
+
+        <!-- 문제 목록 (동적 생성) -->
+        <div id="exam-questions-container" style="display:none;"></div>
+
+        <!-- 답안지 제출 버튼 -->
+        <div id="exam-submit-area" style="display:none;" class="card">
+          <button id="exam-submit-btn" type="button">답안지 제출</button>
+        </div>
+      </section>
+
+      <!-- 성적로그 -->
+      <section id="page-score" class="page" style="display:none;">
+        <h1>📊 성적로그</h1>
+        <div class="card" id="score-log-card">
+          <p style="color:#999;">로딩 중...</p>
+        </div>
+      </section>
+
+      <!-- 토큰로그 -->
+      <section id="page-token" class="page" style="display:none;">
+        <h1>🪙 토큰로그</h1>
+        <div class="card">토큰로그 화면 자리</div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="resultModal" class="modal hidden" style="display:none;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="resultTitle">채점 결과</h2>
+        <button id="closeModalBtn" type="button">X</button>
+      </div>
+      <div class="modal-body">
+        <div id="resultMessage"></div>
+        <div class="solution-box">
+          <h3>풀이 설명</h3>
+          <p id="solutionText"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="ttsBtn" type="button">음성 듣기</button>
+        <button id="resultActionBtn" type="button">다음</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="feedbackModal" class="modal hidden" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="feedbackTitle">👨‍🏫AI 선생님의 피드백</h2>
+      <button id="closeFeedbackModalBtn" type="button">X</button>
+    </div>
+    <div class="modal-body">
+      <div class="solution-box" style="display:block;">
+        <p id="feedbackText"></p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="feedbackRetryBtn" type="button">다른 문제 풀기</button>
+      <button id="feedbackNextUnitBtn" type="button">다음 단원으로 가기 ➡️</button>
+    </div>
+  </div>
+</div>
+
+  <!-- 시험 결과 모달 -->
+  <div id="examResultModal" class="modal hidden" style="display:none;">
+    <div class="modal-box" id="examResultModalBox">
+      <div class="modal-header">
+        <h2>📋 시험 결과</h2>
+      </div>
+      <div class="modal-body" id="examResultBody">
+        <!-- section3.js에서 동적으로 채워짐 -->
+      </div>
+      <div class="modal-footer">
+        <button id="examTtsBtn" type="button">음성 듣기</button>
+        <button id="examResultConfirmBtn" type="button">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/section1.js"></script>
+  <script src="js/section2.js"></script>
+  <script src="js/section3.js"></script>
+  <script src="js/section4.js"></script>
+  <script src="js/section5.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    initApp();
+  </script>
+</body>
+</html>

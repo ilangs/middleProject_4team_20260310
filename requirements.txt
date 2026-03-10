@@ -1,0 +1,17 @@
+pandas
+openai
+chromadb
+python-dotenv
+langchain
+langchain-openai
+langgraph
+langsmith             
+
+fastapi
+uvicorn
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+
+# 실행 방법:
+#   uvicorn server:app --reload --port 8000
