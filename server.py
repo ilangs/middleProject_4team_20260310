@@ -178,11 +178,11 @@ async def root():
 # ⑦ 서버 직접 실행 진입점
 #
 # 실행 방법:
-#   uvicorn app:app --reload --port 8000
+#   uvicorn server:app --reload --port 8000
 #
 #   --reload: 코드 수정 시 서버 자동 재시작 (개발용)
 #   --port:   포트 번호 (기본 8000)
 # ─────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

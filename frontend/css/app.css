@@ -78,6 +78,7 @@ body.login-page {
 
 input[type="password"]{
   letter-spacing: 2px;
+  font-family: sans-serif !important;
 }
 
 /* 모달 */
@@ -891,4 +892,20 @@ body, .app-shell {
     height: auto !important;
     min-height: 0;
     margin-bottom: 0;
+}
+
+/* 시험 시작 전 문제 컨테이너의 상태 */
+.exam-locked {
+    filter: blur(8px);          /* 8픽셀만큼 흐리게 */
+    pointer-events: none;       /* 클릭, 타이핑 등 모든 상호작용 차단 */
+    user-select: none;          /* 드래그해서 복사하는 것도 방지 */
+    opacity: 0.6;               /* 약간 투명하게 */
+    transition: all 0.5s ease;  /* 선명해질 때 부드럽게 변하도록 설정 */
+}
+
+/* 시험 시작 후 (흐림 제거) */
+.exam-unlocked {
+    filter: blur(0);
+    pointer-events: auto;
+    opacity: 1;
 }

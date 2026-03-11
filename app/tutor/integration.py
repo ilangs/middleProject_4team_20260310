@@ -1,5 +1,4 @@
-import os, json
-import hashlib
+import os, json, hashlib, tempfile
 import pandas as pd
 from typing import TypedDict, Optional, Dict, Any, Annotated
 from dotenv import load_dotenv
@@ -26,13 +25,16 @@ llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
 
 def generate_speech_with_cache(text: str) -> bytes:
     text_hash = hashlib.md5(text.encode()).hexdigest()
-    audio_dir = "assets/audio"
-
+    
+    # ⭐ 핵심 변경: 프로젝트 폴더(assets/audio) 대신, Live Server가 감시하지 못하는 'OS 임시 폴더'를 사용합니다!
+    audio_dir = os.path.join(tempfile.gettempdir(), "ai_math_tutor_audio")
+    
     if not os.path.exists(audio_dir):
         os.makedirs(audio_dir)
 
     file_path = os.path.join(audio_dir, f"{text_hash}.mp3")
 
+    # 이미 생성된 음성이 임시 폴더에 있다면 바로 읽어옵니다. (OpenAI 비용 절감 & 속도 향상)
     if os.path.exists(file_path):
         with open(file_path, "rb") as f:
             return f.read()
@@ -43,6 +45,8 @@ def generate_speech_with_cache(text: str) -> bytes:
             voice="nova",
             input=text
         )
+        
+        # Live Server가 모르는 안전한 임시 폴더에 파일 저장
         response.write_to_file(file_path)
 
         with open(file_path, "rb") as f:
@@ -72,7 +76,7 @@ def get_problem_by_unit(unit_name: str) -> dict:
     return None
 
 
-# ⭐ 시험용 문제 추출 (기능 추가)
+# ⭐ 시험용 문제 추출
 
 def get_exam_problems(unit_name: str, n: int =3) -> list:
 
@@ -91,7 +95,6 @@ def get_exam_problems(unit_name: str, n: int =3) -> list:
         for p in problems
     ]
 
-
 # ==========================================
 # 2. LangChain 체인
 # ==========================================
@@ -103,20 +106,20 @@ explain_prompt = ChatPromptTemplate.from_messages([
     [가이드라인]
     1. "안녕! 나는 루미 선생님이야!"처럼 친근하게 시작할 것.
     2. 초등학생이 이해하기 쉬운 비유를 하나 들어줄 것.
-    3. 설명 마지막에는 "이해가 잘 되었니? 이제 문제를 하나 풀어볼까?"라고 물어봐줘.""")])
+    3. 설명 마지막에는 "이해가 잘 되었니? 이제 문제를 하나 풀어볼까?"라고 물어봐줘.""")
+])
 
-#"""너는 수학 선생님인 토끼 캐릭터 '루미'야. 초등학교 5학년 학생들에게 아주 친절하고 쉽게 설명해줘. '{unit_name}' 단원을 재미있는 예시로 설명해줘."""
 
 explain_chain = explain_prompt | llm | StrOutputParser()
-
 
 def explain_concept(unit_name: str) -> str:
     return explain_chain.invoke({"unit_name": unit_name})
 
 reexplain_prompt = ChatPromptTemplate.from_messages([
     ("system", """너는 초등학생 수학 선생님인 토끼 캐릭터 '루미'야.
-학생이 '{unit_name}' 단원의 개념을 한 번 들었는데 잘 이해하지 못했어.
-처음 설명보다 훨씬 더 쉽고, 피자 나누기나 사탕 나누기 같은 일상생활의 재미있고 친숙한 예시를 들어서 아주 친절하게 한글로 다시 설명해줘.""")
+    학생이 '{unit_name}' 단원의 개념을 한 번 들었는데 잘 이해하지 못했어.
+    처음 설명보다 훨씬 더 쉽고, 피자 나누기나 사탕 나누기 같은 일상생활의 재미있고 친숙한 예시를 들어서 아주 친절하게 한글로 다시 설명해줘. 수학과 무관한 엉뚱한 대답을 하면 부드럽게 수학 학습으로 유도해줘.
+    """)
 ])
 
 reexplain_chain = reexplain_prompt | llm | StrOutputParser()
@@ -133,20 +136,18 @@ concept_eval_prompt = ChatPromptTemplate.from_messages([
     2. 이해도가 충분하면 답변 마지막에 반드시 [PASS]라고 적어주세요.
     3. 설명이 부족하거나 틀렸다면 친절하게 교정해주고, 답변 마지막에 반드시 [FAIL]이라고 적어주세요.
     4. 모든 피드백은 따뜻하고 격려하는 말투로 작성하세요.
+    5. 수학과 무관한 엉뚱한 대답을 하면 부드럽게 수학 학습으로 유도해줘.
     """),
     ("user", "{student_explanation}")
 ])
 
-
-# """초등학교 5학년 수학 선생님입니다. 학생이 '{concept}'을 설명했습니다. 이해가 충분하면 마지막에 [PASS] 부족하면 [FAIL]을 적어주세요."""
-
 concept_chain = concept_eval_prompt | llm | StrOutputParser()
-
 
 answer_eval_prompt = ChatPromptTemplate.from_messages([
     ("system", """
     너는 초등학교 수학 선생님이야. 
     학생의 답변을 평가할 때 다음 [출력 규칙]을 반드시 지켜서 한글로 답변해 줘.
+    수학과 무관한 엉뚱한 대답을 하면 부드럽게 수학 학습으로 유도해 줘.
     
     [출력 규칙]
     1. 모든 숫자와 연산 기호는 LaTeX 형식인 $ 기호로 감싸서 표현해. 
@@ -173,15 +174,6 @@ answer_eval_prompt = ChatPromptTemplate.from_messages([
 
 answer_chain = answer_eval_prompt | llm | StrOutputParser()
 
-
-# """초등학교 5학년 수학 선생님입니다. 숫자와 수식은 LaTeX $...$ 형식으로 표현하세요.
-
-# 문제: {problem_question}
-# 정답 및 풀이: {problem_solution}
-
-# 마지막 줄에 반드시 [정답] 또는 [오답]을 적으세요."""
-
-
 # ==========================================
 # 3. Q&A 챗봇
 # ==========================================
@@ -192,18 +184,13 @@ _QA_SYSTEM_PROMPT = """
         너는 엄격하고 전문적인 수학 선생님이야. 모든 답변은 수학적 지식에 근거해야 해.
             
         가장 중요한 규칙:
-        수학과 직접적으로 관련되지 않은 질문(일상 대화, 과학, 역사, 코딩 등)을 받으면, 답변하지 말고 반드시 다음과 같이 정중히 거절해줘: 
-        '수학 선생님은 수학 관련 질문에만 답변할 수 있어요.'
+        수학과 무관한 엉뚱한 대답을 하면 부드럽게 수학 학습으로 유도해줘.
         
         지침: 
         - 초등학생 3학년 눈높이에 맞게 상냥한 말투(~했어?, ~단다!)를 사용할 것.
         - 모든 수식은 LaTeX 형식(예: $2 + 3 = 5$)으로 작성해줘.
         """
         
-# """너는 수학 선생님 '루미'야.
-# 초등학생 질문에 친절하게 답해줘.
-# 수식은 $...$ 형식으로 표현해."""
-
 
 def ask_question_to_tutor(question: str, chat_history: list) -> str:
 
@@ -398,6 +385,7 @@ def ask_question_with_rag_context(question: str, chat_history: list) -> tuple:
     """
     ChromaDB에서 유사 문제를 검색한 뒤, 그 내용을 참고자료로 활용하여
     LLM이 학생 눈높이에 맞는 답변을 생성합니다.
+    수학과 무관한 엉뚱한 질문을 하면 부드럽게 수학 학습으로 유도해 주세요.
 
     반환값: (답변 딕셔너리, RAG 사용 여부)
     - 답변 딕셔너리 형태: {"answer": "화면 표시용", "tts_text": "음성 재생용 한글 발음"}
@@ -451,18 +439,20 @@ def ask_question_with_rag_context(question: str, chat_history: list) -> tuple:
     system_prompt = (
         "너는 수학 선생님 '루미'야.\n"
         "초등학생 질문에 친절하고 쉽게 답해줘.\n"
+        "학생이 수학과 무관한 엉뚱한 질문을 하면 부드럽게 수학 학습으로 유도해 줘\n"
         "수치 계산은 반드시 정확하게 해줘.\n\n"
         "【중요: 출력 형식】\n"
         "반드시 아래의 JSON 형식으로만 응답해야 해. 마크다운 코드 블록이나 다른 부연 설명은 절대 넣지 마.\n"
         "{\n"
         '  "answer": "학생 화면에 보여줄 답변 (수식은 $...$ 형식으로 포함)",\n'
-        '  "tts_text": "시각장애인이 듣고 완벽하게 이해할 수 있도록, answer 내용 중 모든 수식을 순수 한글 발음으로 풀어서 쓴 텍스트. 분수 \\frac{A}{B}는 \'B 분의 A\'로 읽고, 기호는 반드시 한글(÷는 나누기, =는 은, ×는 고파기)로 적어. 또한 \'나눗셈\'이라는 단어는 발음 오류 방지를 위해 \'나누쎔\'으로 강제로 적어줘."\n'
+        '  "tts_text": "시각장애인이 듣고 완벽하게 이해할 수 있도록, answer 내용 중 모든 수식을 순수 한글 발음으로 풀어서 쓴 텍스트. 분수 \\frac{A}{B}는 \'B 분의 A\'로 읽고, 기호는 반드시 한글(÷는 나누기, =는 은, ×는 고파기)로 적어. 또한 \'나눗셈\'이라는 단어는 발음 오류 방지를 위해 \'나눋쎔\'으로 강제로 적어줘."\n'
         "}\n\n"
     )
 
     if rag_context:
         system_prompt += (
             "아래 참고자료를 바탕으로 개념과 예제를 학생 눈높이에 맞게 설명해줘.\n"
+            "학생이 수학과 무관한 엉뚱한 얘기를 하면 부드럽게 수학 학습으로 유도해 줘\n\n"
             "참고자료에 없는 내용은 네가 아는 지식으로 보충해도 돼.\n\n"
             f"--- 참고자료 ---\n{rag_context}\n--- 참고자료 끝 ---"
         )

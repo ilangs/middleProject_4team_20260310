@@ -7,7 +7,6 @@ let examTimer = null;
 let examTimeLeft = 2400;
 let examStarted = false;
 let examSubmitting = false;
-let examTtsText = "";
 let examModalClosable = false;
 let examPendingSaveData = null;
 
@@ -24,7 +23,6 @@ function resetExamState() {
   examStarted = false;
   examSubmitting = false;
   examTimeLeft = 2400;
-  examTtsText = "";
   examModalClosable = false;
   examPendingSaveData = null;
 
@@ -41,14 +39,14 @@ function resetExamState() {
   const modal = document.getElementById("examResultModal");
   const body = document.getElementById("examResultBody");
   const confirmBtn = document.getElementById("examResultConfirmBtn");
-  const ttsBtn = document.getElementById("examTtsBtn");
   const unitSel = document.getElementById("exam-unit-select");
   const makeBtn = document.getElementById("exam-make-btn");
   const submitBtn = document.getElementById("exam-submit-btn");
-
+ 
   if (timerBox) timerBox.style.display = "none";
 
   if (questionsBox) {
+    questionsBox.classList.remove("exam-locked", "exam-unlocked"); // 클래스 초기화
     questionsBox.style.display = "none";
     questionsBox.innerHTML = "";
   }
@@ -73,12 +71,6 @@ function resetExamState() {
     confirmBtn.textContent = "확인";
     confirmBtn.style.display = "inline-block";
     confirmBtn.disabled = false;
-  }
-
-  if (ttsBtn) {
-    ttsBtn.style.display = "inline-block";
-    ttsBtn.disabled = false;
-    ttsBtn.textContent = "음성 듣기";
   }
 
   if (unitSel) unitSel.disabled = false;
@@ -203,6 +195,10 @@ function renderExamQuestions(problems) {
   container.innerHTML = "";
   container.style.display = "block";
 
+  // ⭐ [추가] 문제를 생성하자마자 흐리게 처리합니다.
+  container.classList.add("exam-locked");
+  container.classList.remove("exam-unlocked");
+
   problems.forEach((prob, idx) => {
     const num = idx + 1;
     const probText = prob["문제"] || "(문제 없음)";
@@ -258,10 +254,16 @@ function startExamTimer() {
   const startBtn = document.getElementById("exam-start-btn");
   const makeBtn = document.getElementById("exam-make-btn");
   const unitSel = document.getElementById("exam-unit-select");
+  // ⭐ [추가] 문제 컨테이너의 흐림 효과를 제거하고 선명하게 만듭니다.
+  const container = document.getElementById("exam-questions-container");
 
   if (startBtn) startBtn.disabled = true;
   if (makeBtn) makeBtn.disabled = true;
   if (unitSel) unitSel.disabled = true;
+  if (container) {
+    container.classList.remove("exam-locked");
+    container.classList.add("exam-unlocked");
+  }
 
   updateTimerDisplay();
 
@@ -453,7 +455,6 @@ function fillExamResultBody(result) {
   examModalClosable = true;
 
   const confirmBtn = document.getElementById("examResultConfirmBtn");
-  const ttsBtn = document.getElementById("examTtsBtn");
 
   if (confirmBtn) {
     confirmBtn.textContent = "확인";
@@ -461,10 +462,6 @@ function fillExamResultBody(result) {
     confirmBtn.disabled = false;
   }
 
-  if (ttsBtn) {
-    ttsBtn.style.display = "inline-block";
-    ttsBtn.disabled = false;
-  }
 }
 
 function showExamResultError(message) {
@@ -480,16 +477,11 @@ function showExamResultError(message) {
   examModalClosable = true;
 
   const confirmBtn = document.getElementById("examResultConfirmBtn");
-  const ttsBtn = document.getElementById("examTtsBtn");
 
   if (confirmBtn) {
     confirmBtn.textContent = "확인";
     confirmBtn.style.display = "inline-block";
     confirmBtn.disabled = false;
-  }
-
-  if (ttsBtn) {
-    ttsBtn.style.display = "none";
   }
 
   openExamResultModal();
@@ -504,7 +496,11 @@ function closeExamResultModal() {
     modal.style.display = "none";
   }
 
-  resetExamState();
+  // ⭐ 이 줄이 범인일 확률이 높습니다. 일단 주석 처리합니다.
+  // resetExamState(); 
+
+  // 대신, 시험 섹션의 메인 상태로 부드럽게 복귀시킵니다.
+  goPage("exam"); 
 }
 
 async function saveExamResultAfterConfirm(data) {
@@ -519,89 +515,37 @@ async function saveExamResultAfterConfirm(data) {
   }
 }
 
-async function playExamTTS() {
-  if (!examTtsText) return;
-
-  const btn = document.getElementById("examTtsBtn");
-
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = "생성 중...";
-  }
-
-  try {
-    const res = await apiFetch("/api/tts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: examTtsText })
-    });
-
-    if (!res.ok) throw new Error("TTS API 응답 오류");
-
-    const data = await res.json();
-
-    if (data.audio_b64) {
-      const audio = new Audio(`data:audio/mp3;base64,${data.audio_b64}`);
-      audio.play();
-    } else {
-      throw new Error("오디오 데이터 없음");
-    }
-  } catch (e) {
-    console.warn("TTS API 실패, 브라우저 음성 합성으로 대체:", e);
-
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      const utt = new SpeechSynthesisUtterance(examTtsText);
-      utt.lang = "ko-KR";
-      window.speechSynthesis.speak(utt);
-    } else {
-      alert("이 브라우저에서는 음성 기능을 사용할 수 없습니다.");
-    }
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = "음성 듣기";
-    }
-  }
-}
 
 function bindExamModalEvents() {
-  const modal = document.getElementById("examResultModal");
-  const modalBox = document.getElementById("examResultModalBox");
   const confirmBtn = document.getElementById("examResultConfirmBtn");
-  const ttsBtn = document.getElementById("examTtsBtn");
 
-  if (modal && !modal.dataset.examBound) {
-    modal.dataset.examBound = "1";
-    modal.addEventListener("click", e => e.stopPropagation());
-  }
-
-  if (modalBox && !modalBox.dataset.examBound) {
-    modalBox.dataset.examBound = "1";
-    modalBox.addEventListener("click", e => e.stopPropagation());
-  }
-
-  if (confirmBtn && !confirmBtn.dataset.examBound) {
-    confirmBtn.dataset.examBound = "1";
-    confirmBtn.addEventListener("click", async e => {
-      e.stopPropagation();
-
-      const pendingData = examPendingSaveData;
-      closeExamResultModal();
-
-      if (pendingData) {
-        setTimeout(() => {
-          saveExamResultAfterConfirm(pendingData);
-        }, 100);
+  if (confirmBtn) {
+    // ⭐ [완전 해결책] 다른 모든 리스너를 무시하고 이 함수만 실행하도록 강제합니다.
+    confirmBtn.onclick = async function(e) {
+      // 1. 브라우저의 모든 기본 동작을 즉시 정지
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
       }
-    });
-  }
 
-  if (ttsBtn && !ttsBtn.dataset.examBound) {
-    ttsBtn.dataset.examBound = "1";
-    ttsBtn.addEventListener("click", e => {
-      e.stopPropagation();
-      playExamTTS();
-    });
+      console.log("✅ 확인 버튼 클릭됨 - 튕김 방지 가동");
+
+      // 2. 모달창 닫기 (새로고침 유발하는 resetExamState는 내부에서 제거했음)
+      const modal = document.getElementById("examResultModal");
+      if (modal) {
+        modal.classList.add("hidden");
+        modal.style.display = "none";
+      }
+
+      // 3. 데이터 저장 (비동기로 실행하여 UI 스레드 방해 안 함)
+      const pendingData = examPendingSaveData;
+      if (pendingData) {
+        // API 호출 중 화면이 튕기는 것을 막기 위해 비동기 처리
+        saveExamResultAfterConfirm(pendingData).catch(err => console.error(err));
+      }
+
+      // 4. 절대 페이지 이동이나 리로드를 하지 않음 (중요!)
+      return false; 
+    };
   }
 }

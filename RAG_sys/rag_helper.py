@@ -47,8 +47,8 @@ def build_vector_db():
         batch_df = df.iloc[i : i + batch_size]
         
         documents = batch_df['문제'].tolist()
-        # 분리된 정답과 풀이 컬럼을 사용하도록 반영됨
-        metadatas = batch_df[['ID', '단원', '난이도', '정답', '풀이']].fillna("없음").to_dict('records')
+        # 모든 데이터를 강제로 문자열(str)로 확실하게 변환하여 ChromaDB 에러를 원천 차단합니다.
+        metadatas = batch_df[['ID', '단원', '난이도', '정답', '풀이']].fillna("없음").astype(str).to_dict('records')
         ids = batch_df['ID'].astype(str).tolist()
         
         try:

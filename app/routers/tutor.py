@@ -2,9 +2,7 @@
 routers/tutor.py  ─  튜터 기능 API 라우터
 """
 
-import json
-import base64
-import asyncio
+import json, base64, asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -42,37 +40,30 @@ router = APIRouter()
 class ExplainRequest(BaseModel):
     unit_name: str
 
-
 class StudentExplainRequest(BaseModel):
     concept: str
     student_explanation: str
-
 
 class AskRequest(BaseModel):
     question: str
     chat_history: list = []
 
-
 class EvaluateRequest(BaseModel):
     problem: dict
     student_answer: str
-
 
 class SaveHistoryRequest(BaseModel):
     problem_id: str
     unit: str
     is_correct: bool
 
-
 class ExamGenerateRequest(BaseModel):
     unit_name: str
-
 
 class ExamSubmitRequest(BaseModel):
     unit: str
     problems: list
     answers: list
-
 
 class ExamSaveRequest(BaseModel):
     unit: str
@@ -81,10 +72,11 @@ class ExamSaveRequest(BaseModel):
     wrong_numbers: list
     feedbacks: dict
 
-
 class TTSRequest(BaseModel):
     text: str
 
+class TTSResponse(BaseModel):
+    audio_b64: str
 
 class FreeChatRequest(BaseModel):
     """자유학습 채팅 요청 모델"""
@@ -298,7 +290,7 @@ async def exam_results(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/tts")
+@router.post("/tts", response_model=TTSResponse)
 async def text_to_speech(
     body: TTSRequest,
     current_user: dict = Depends(get_current_user)

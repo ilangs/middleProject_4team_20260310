@@ -412,7 +412,6 @@ async function toggleFreeTTS(text, btn) {
         var res = await apiFetch("/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            // ⭐ 기존의 text 대신 교정된 safeText를 백엔드로 전송하도록 수정
             body: JSON.stringify({ text: safeText })
         });
 
@@ -420,10 +419,13 @@ async function toggleFreeTTS(text, btn) {
 
         var data = await res.json();
 
-        if (!data.audio_b64) throw new Error("오디오 데이터 없음");
+        // ⭐ 핵심 수정: section1.js와 동일하게 문자열/객체 응답을 모두 안전하게 커버합니다!
+        var audioData = typeof data === "string" ? data : data.audio_b64;
+
+        if (!audioData) throw new Error("오디오 데이터 없음");
 
         // Audio 객체 생성
-        var audio = new Audio("data:audio/mp3;base64," + data.audio_b64);
+        var audio = new Audio("data:audio/mp3;base64," + audioData);
 
         // 버튼에 Audio 객체 연결 (나중에 일시정지/재개에 사용)
         btn._audioObj = audio;

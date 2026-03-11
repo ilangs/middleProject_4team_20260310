@@ -123,6 +123,20 @@ function goPage(pageName) {
 
   currentPage = pageName;
 
+  //ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+  //app.js에서 페이지 이동 시마다 홈 비디오 재생/멈춤 처리 추가
+  const homeVideo = document.getElementById("homeVideo");
+
+  if (homeVideo) {
+    if (pageName === "home") {
+      homeVideo.play().catch(() => {});
+    } else {
+      homeVideo.pause();
+      homeVideo.currentTime = 0;
+    }
+  }
+  // ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+
   if (pageName === "today") {
     localStorage.setItem("step", "select_unit");
     renderToday();
@@ -208,12 +222,15 @@ function openResultModal() {
 }
 
 function closeResultModal() {
+  // 1. 음성 즉시 중지 및 상태 초기화
+  stopAllModalAudio();
 
+  // 2. 모달 닫기 로직
   const modal = document.getElementById("resultModal");
-  if (!modal) return;
-
-  modal.classList.add("hidden");
-  modal.style.display = "none";
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.style.display = "none";
+  }
 }
 
 //───────────────────────────────────────

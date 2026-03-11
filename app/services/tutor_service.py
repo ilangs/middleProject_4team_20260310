@@ -2,10 +2,7 @@
 services/tutor_service.py  ─  튜터 로직 서비스 계층
 """
 
-import os
-import base64
-import zipfile
-import asyncio
+import os, base64, zipfile, asyncio
 
 from app.tutor.integration import (
     explain_concept,
@@ -88,14 +85,27 @@ async def generate_exam_questions(unit_name: str) -> list:
     return get_exam_problems(unit_name, n=10)
 
 
+
 async def grade_exam_answers(problems: list, answers: list) -> dict:
 
     def grade_one_sync(problem, answer):
-        if not answer or not str(answer).strip():
-            return {"feedback": "답을 입력하지 않았습니다.\n\n[오답]", "is_correct": False}
+        # 1. 공란인 경우에도 설명을 가져오기 위해 evaluate_answer를 호출하도록 변경하거나, 
+        #    최소한 설명을 포함하도록 수정해야 합니다.
+        user_answer_str = str(answer).strip() if answer else ""
+        
         try:
-            feedback = evaluate_answer(problem, answer)
-            return {"feedback": feedback, "is_correct": "[정답]" in feedback}
+            # 공란이더라도 evaluate_answer가 해설을 반환하도록 호출합니다.
+            feedback = evaluate_answer(problem, user_answer_str)
+            
+            # 정답 여부 판단
+            is_correct = "[정답]" in feedback
+            
+            # 만약 공란이었다면 피드백 앞에 안내 문구 추가 (선택 사항)
+            if not user_answer_str:
+                feedback = f"답을 입력하지 않았습니다.\n\n{feedback}"
+                
+            return {"feedback": feedback, "is_correct": is_correct}
+            
         except Exception as e:
             return {"feedback": f"채점 중 오류가 발생했습니다. [오답] ({e})", "is_correct": False}
 
@@ -113,10 +123,12 @@ async def grade_exam_answers(problems: list, answers: list) -> dict:
     score = round(correct_count / total * 100) if total > 0 else 0
 
     wrong_numbers = [i + 1 for i, r in enumerate(results) if not r["is_correct"]]
+
+    # :star: 핵심 수정 부분: 'if not results[i]["is_correct"]' 조건을 제거합니다.
     feedbacks = {
         str(i + 1): results[i]["feedback"]
         for i in range(len(results))
-        if not results[i]["is_correct"]
+        # 이 뒤에 있던 필터링 조건을 삭제하여 모든 번호의 피드백을 포함시킵니다.
     }
 
     return {
