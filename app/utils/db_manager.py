@@ -72,7 +72,7 @@ def init_db():
              timestamp DATETIME DEFAULT CURRENT_TIMESTAMP)
         """)
 
-        # ⭐ 시험 결과 테이블 (주석님 코드 추가)
+        # ⭐ 시험 결과 테이블 (코드 추가)
         c.execute("""
             CREATE TABLE IF NOT EXISTS exam_results
             (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -232,7 +232,7 @@ def delete_user(username: str):
 
 
 # ──────────────────────────────────────────────
-# 시험 결과 저장 (주석님 기능)
+# 시험 결과 저장 (기능)
 # ──────────────────────────────────────────────
 
 def save_exam_result(username: str, unit: str, score: int, total_questions: int,

@@ -59,7 +59,7 @@ for qid, p_info in problems.items():
 # 3. 결과 저장
 if final_list:
     df = pd.DataFrame(final_list)
-    df.to_csv('math_tutor_dataset.csv', index=False, encoding='utf-8-sig')
+    df.to_csv('math_tutor_dataset_before.csv', index=False, encoding='utf-8-sig')
     print(f"✨ 통합 성공! 총 {len(final_list)}개의 세트가 저장되었습니다.")
 else:
     print("⚠️ 여전히 데이터를 찾지 못했습니다. 경로 탐색 범위를 확인해 보세요.")

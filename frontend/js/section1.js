@@ -270,9 +270,17 @@ function renderToday() {
   if (btnStart && !btnStart.dataset.bound) {
     btnStart.dataset.bound = "1";
     btnStart.addEventListener("click", async () => {
+      // 추가: 로딩 오버레이 표시
+      document.getElementById("loading-overlay").style.display = "flex";
+
+      // 추가: 로딩 화면이 잠깐이라도 보이도록 0.1초 대기
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const unit = document.getElementById("unit-select")?.value;
 
       if (!unit) {
+        // 추가: 단원 미선택 시 로딩 오버레이 숨김
+        document.getElementById("loading-overlay").style.display = "none";
         alert("단원을 선택하세요");
         return;
       }
@@ -289,6 +297,9 @@ function renderToday() {
         const data = await res.json();
         const explanation = data.explanation || "설명이 없습니다.";
 
+        // 추가: 설명 데이터 받은 뒤 로딩 오버레이 숨김
+        document.getElementById("loading-overlay").style.display = "none";
+
         localStorage.setItem("current_explanation", explanation);
         logMathText("설명", explanation);
 
@@ -302,6 +313,9 @@ function renderToday() {
           true
         );
       } catch {
+        // 추가: 오류 발생 시에도 로딩 오버레이 숨김
+        document.getElementById("loading-overlay").style.display = "none";
+
         showSolutionModal(
           "오류",
           "설명을 불러오는 데 실패했어요.",

@@ -72,7 +72,7 @@ def get_problem_by_unit(unit_name: str) -> dict:
     return None
 
 
-# ⭐ 시험용 문제 추출 (주석님 기능 추가)
+# ⭐ 시험용 문제 추출 (기능 추가)
 
 def get_exam_problems(unit_name: str, n: int =3) -> list:
 
@@ -424,18 +424,22 @@ def ask_question_with_rag_context(question: str, chat_history: list) -> tuple:
                     relevant_docs.append({
                         "문제": doc,
                         "단원": meta.get("단원", ""),
-                        "풀이및정답": meta.get("풀이및정답", ""),
+                        # ⭐ 변경: '풀이및정답' 대신 '정답'과 '풀이'를 각각 가져옵니다.
+                        "정답": meta.get("정답", ""),
+                        "풀이": meta.get("풀이", ""),
                     })
 
             if relevant_docs:
                 rag_used = True
                 rag_parts = []
                 for j, rd in enumerate(relevant_docs):
+                    # ⭐ 변경: LLM에게 참고자료를 넘겨줄 때 정답과 풀이를 나눠서 줍니다.
                     rag_parts.append(
                         f"[참고자료 {j+1}]\n"
                         f"단원: {rd['단원']}\n"
                         f"문제: {rd['문제']}\n"
-                        f"풀이: {rd['풀이및정답']}"
+                        f"정답: {rd['정답']}\n"
+                        f"풀이: {rd['풀이']}"
                     )
                 rag_context = "\n\n".join(rag_parts)
 

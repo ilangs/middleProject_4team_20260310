@@ -410,12 +410,18 @@ function fillExamResultBody(result) {
     wrongNums.forEach(num => {
       const fb = feedbacks[String(num)] || "풀이 설명이 없습니다.";
 
+      // ⭐ 1. 텍스트를 수식용으로 1차 가공 (분수 등을 LaTeX로 변환)
+      let processedFb = fb;
+      if (typeof prepareMathDisplayText === "function") {
+        processedFb = prepareMathDisplayText(fb);
+      }
+
       feedbackHtml += `
         <div style="margin-bottom:18px; padding-bottom:14px; border-bottom:1px solid #eee;">
           <p style="font-weight:bold; color:#d32f2f; font-size:17px; margin:0 0 6px 0;">
             ${num}번 풀이
           </p>
-          <div class="solution-box">${escapeHtml(fb)}</div>
+          <div class="solution-box">${escapeHtml(processedFb)}</div>
         </div>
       `;
     });
@@ -431,6 +437,17 @@ function fillExamResultBody(result) {
     <h3 style="margin:0 0 12px 0; font-size:20px;">틀린 문제 풀이</h3>
     ${feedbackHtml}
   `;
+
+  // ⭐ 2. HTML이 화면에 추가된 직후 수식 렌더링 함수 실행!
+  if (typeof renderMath === "function") {
+    setTimeout(() => {
+      try {
+        renderMath("examResultBody"); // 모달 영역 내의 수식을 예쁘게 그림
+      } catch (e) {
+        console.error("수식 렌더링 실패:", e);
+      }
+    }, 100);
+  }
 
   examTtsText = `시험 점수는 ${displayScore}점입니다. ${levelText}`;
   examModalClosable = true;
