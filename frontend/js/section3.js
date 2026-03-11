@@ -520,31 +520,36 @@ function bindExamModalEvents() {
   const confirmBtn = document.getElementById("examResultConfirmBtn");
 
   if (confirmBtn) {
-    // ⭐ [완전 해결책] 다른 모든 리스너를 무시하고 이 함수만 실행하도록 강제합니다.
+    // ⭐ [수정] 확인 버튼 클릭 시 초기 화면으로 복구하는 로직
     confirmBtn.onclick = async function(e) {
-      // 1. 브라우저의 모든 기본 동작을 즉시 정지
       if (e) {
         e.preventDefault();
         e.stopPropagation();
       }
 
-      console.log("✅ 확인 버튼 클릭됨 - 튕김 방지 가동");
+      console.log("✅ 시험 결과 확인 - 초기 화면으로 복귀합니다.");
 
-      // 2. 모달창 닫기 (새로고침 유발하는 resetExamState는 내부에서 제거했음)
+      // 1. 모달창 즉시 닫기
       const modal = document.getElementById("examResultModal");
       if (modal) {
         modal.classList.add("hidden");
         modal.style.display = "none";
       }
 
-      // 3. 데이터 저장 (비동기로 실행하여 UI 스레드 방해 안 함)
-      const pendingData = examPendingSaveData;
-      if (pendingData) {
-        // API 호출 중 화면이 튕기는 것을 막기 위해 비동기 처리
-        saveExamResultAfterConfirm(pendingData).catch(err => console.error(err));
+      // 2. 시험 데이터 저장 (비동기)
+      if (examPendingSaveData) {
+        saveExamResultAfterConfirm(examPendingSaveData).catch(err => console.error(err));
       }
 
-      // 4. 절대 페이지 이동이나 리로드를 하지 않음 (중요!)
+      // 3. ⭐ 핵심: 시험 섹션의 모든 상태를 초기화하고 첫 화면으로 되돌림
+      // resetExamState() 함수가 위에서 정의한 대로 모든 UI 요소를 숨기고 버튼을 복구합니다.
+      resetExamState(); 
+
+      // 4. 만약 별도의 페이지 이동 함수가 있다면 호출 (없어도 resetExamState가 처리함)
+      if (typeof goPage === "function") {
+        goPage("exam"); 
+      }
+
       return false; 
     };
   }
