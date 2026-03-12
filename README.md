@@ -448,10 +448,12 @@ save_token_usage(
 
 | 이름 | 역할 | 담당 영역 |
 |------|------|-----------|
-| 팀원 1 | 팀장 / 백엔드 | FastAPI 서버 설계, JWT 인증, DB 설계 |
-| 팀원 2 | AI / LangChain | LangChain 체인 구성, RAG 파이프라인 구축 |
-| 팀원 3 | 데이터 | 데이터 수집·정제 파이프라인, ChromaDB 구축 |
-| 팀원 4 | 프론트엔드 | HTML/JS UI 구현, 각 섹션 기능 연동 |
+| 팀장	| Project Leader	| 프로젝트 총괄, 발표 및 LangChain 워크플로우(Chain) 설계 |
+| 팀원 1	| Data Engineer	| 데이터 파이프라인(수집·정제) 구축, RAG 최적화 및 Vector DB |
+| 팀원 2	| Backend Developer	| FastAPI 기반 API 서버 설계, JWT 보안 인증, DB 설계 |
+| 팀원 3	| Frontend Developer	| UI/UX 구현(HTML/JS), 프론트-백엔드 기능 연동 |
+| 팀원 4	| QA & DevRel	| 시스템 통합 테스트, 사용자 피드백 분석, 프로젝트 시연 자료 제작 |
+| 팀원 5	| Product Planner	| 프로젝트 아이데이션(Ideation), 컨셉 및 비즈니스 로직 기획 |
 
 ---
 
