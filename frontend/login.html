@@ -76,9 +76,15 @@
     </div>
   </div>
 
-  <script src="js/app.js"></script>
+  <script src="/js/app.js"></script>
 
   <script>
+  document.getElementById("password").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      login();
+    }
+  });  
+
    function openSignupModal() {
      document.getElementById("signup-modal").classList.remove("hidden");
    }
@@ -107,7 +113,7 @@
      const character = selectedCharacter.dataset.character;
 
      try {
-       const response = await fetch("http://localhost:8000/auth/register", {
+       const response = await fetch("/auth/register", {
          method: "POST",
          headers: {
            "Content-Type": "application/json"

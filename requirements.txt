@@ -4,8 +4,9 @@ chromadb
 python-dotenv
 langchain
 langchain-openai
+langchain-community
 langgraph
-langsmith             
+langsmith
 
 fastapi
 uvicorn
@@ -13,5 +14,5 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 
-# 실행 방법:
-#   uvicorn server:app --reload --port 8000
+# 실행 방법: uvicorn server:app --reload --port 8000
+# langchain-community : get_openai_callback (토큰 사용량 추적) 포함
